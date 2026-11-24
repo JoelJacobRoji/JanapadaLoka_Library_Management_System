@@ -2,11 +2,15 @@ import { createClient } from '@supabase/supabase-js';
 
 const getEnvOrStorage = (primaryKey, secondaryKeys = []) => {
   const allKeys = [primaryKey, ...secondaryKeys];
+  // 1. Check all environment variables first (they always take precedence over stale browser cache)
   for (const key of allKeys) {
     const envValue = import.meta.env[key];
     if (envValue && !envValue.includes('your-project-ref') && !envValue.includes('your-anon-key')) {
       return envValue;
     }
+  }
+  // 2. Fallback to localStorage only if no environment variable is defined
+  for (const key of allKeys) {
     const stored = localStorage.getItem(key);
     if (stored) return stored;
   }

@@ -1,26 +1,14 @@
 import React, { useState } from 'react';
-import { Database, Key, CheckCircle, AlertCircle, X, ExternalLink, RefreshCw, Table } from 'lucide-react';
-import { getSupabaseConfig, updateSupabaseCredentials, clearSupabaseCredentials, getSupabaseClient } from '../services/supabaseClient';
+import { Database, CheckCircle, AlertCircle, X, RefreshCw } from 'lucide-react';
+import { getSupabaseConfig, getSupabaseClient } from '../services/supabaseClient';
 
 export default function ConnectionModal({ isOpen, onClose }) {
-  const currentConfig = getSupabaseConfig();
-  const [url, setUrl] = useState(currentConfig.url || '');
-  const [anonKey, setAnonKey] = useState(currentConfig.anonKey || '');
+  const { isConfigured } = getSupabaseConfig();
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
   const [tableCounts, setTableCounts] = useState(null);
 
   if (!isOpen) return null;
-
-  const handleSave = (e) => {
-    e.preventDefault();
-    if (!url || !anonKey) {
-      alert('Please provide both the Supabase URL and the Anon Public Key.');
-      return;
-    }
-    updateSupabaseCredentials(url, anonKey);
-    onClose();
-  };
 
   const handleTestConnection = async () => {
     setTesting(true);
@@ -99,33 +87,25 @@ export default function ConnectionModal({ isOpen, onClose }) {
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSave} className="p-6 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-              Project URL (VITE_SUPABASE_URL)
-            </label>
-            <input
-              type="text"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://xyzcompany.supabase.co"
-              className="w-full px-3.5 py-2.5 text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-              Anon Public API Key (VITE_SUPABASE_ANON_KEY)
-            </label>
-            <input
-              type="text"
-              value={anonKey}
-              onChange={(e) => setAnonKey(e.target.value)}
-              placeholder="sb_publishable_... or eyJhbGci..."
-              className="w-full px-3.5 py-2.5 text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              required
-            />
+        <div className="p-6 space-y-4">
+          <div className={`p-3.5 rounded-xl text-xs border space-y-1 ${
+            isConfigured
+              ? 'bg-slate-50 text-slate-700 border-slate-200'
+              : 'bg-amber-50 text-amber-800 border-amber-200'
+          }`}>
+            <div className="flex items-center gap-2 font-semibold">
+              <Database className="w-4 h-4 shrink-0 text-blue-600" />
+              <span>
+                {isConfigured
+                  ? 'Database connection configured:'
+                  : 'Database connection not configured.'}
+              </span>
+            </div>
+            {isConfigured && (
+              <p className="font-mono text-[11px] text-slate-500 truncate" title={currentConfig.url}>
+                {currentConfig.url}
+              </p>
+            )}
           </div>
 
           {testResult && (
@@ -166,33 +146,36 @@ export default function ConnectionModal({ isOpen, onClose }) {
           )}
 
           <div className="pt-2 flex items-center justify-between gap-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={handleTestConnection}
-              disabled={testing || !url || !anonKey}
-              className="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors flex items-center gap-1.5 disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${testing ? 'animate-spin' : ''}`} />
-              <span>{testing ? 'Testing Tables...' : 'Test Database Tables'}</span>
-            </button>
-
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                onClick={handleTestConnection}
+                disabled={testing || !isConfigured}
+                className="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors flex items-center gap-1.5 disabled:opacity-50"
               >
-                Close
+                <RefreshCw className={`w-3.5 h-3.5 ${testing ? 'animate-spin' : ''}`} />
+                <span>{testing ? 'Testing Tables...' : 'Test Database Tables'}</span>
               </button>
+
               <button
-                type="submit"
-                className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-sm shadow-blue-500/20"
+                type="button"
+                onClick={clearSupabaseCredentials}
+                title="Clear browser local cache and reload from .env"
+                className="px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors"
               >
-                Save & Reload
+                Reload from .env
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+            >
+              Close
+            </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
